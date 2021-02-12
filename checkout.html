@@ -1,0 +1,74 @@
+<head>
+    <meta charset="utf-8">
+    <script src="https://www.paypal.com/sdk/js?client-id=AX4QdI3QIBLA6D6MUZQ1KknqpYdFnTnQ-DfVEnV0DBpOhryuy2xakjiyXtob3DCtnGqIAupDMLCtHfsc"></script>
+
+<!-- Load the Braintree components -->
+<script src="https://js.braintreegateway.com/web/3.66.0/js/client.min.js"></script>
+<script src="https://js.braintreegateway.com/web/3.66.0/js/paypal-checkout.min.js"></script>
+</head>
+
+<body>
+    <div id="dropin-container"></div>
+    <div id="paypal-button"></div>
+    <script>
+        var button = document.querySelector('#submit-button');
+
+
+        braintree.client.create({
+            authorization: "customer_token"
+        }).then(function (clientInstance) {
+            // Create a PayPal Checkout component.
+            return braintree.paypalCheckout.create({
+                client: clientInstance
+            });
+        }).then(function (paypalCheckoutInstance) {
+            return paypalCheckoutInstance.loadPayPalSDK({
+                currency: 'USD',
+                intent: 'capture'
+            });
+        }).then(function (paypalCheckoutInstance) {
+            paypal.Buttons({
+                fundingSource: paypal.FUNDING.PAYPAL, //in your configuration to load only a PayPal button:
+                createOrder: function () {
+                    return paypalCheckoutInstance.createPayment({
+                        flow: 'checkout', // or vault
+                        amount: 1.00, // Required
+                        currency: 'USD', // Make sure this matches the currency passed into loadPayPalSDK
+                        intent: 'capture', // Make sure this matches the intent passed into loadPayPalSDK
+                        enableShippingAddress: true,
+                        shippingAddressEditable: false,
+                        shippingAddressOverride: {
+                            recipientName: 'Paul Martínez',
+                            line1: '1234 Main St.',
+                            line2: 'Unit 1',
+                            city: 'Chicago',
+                            countryCode: 'US',
+                            postalCode: '60652',
+                            state: 'IL',
+                            phone: '123.456.7890'
+                        }
+                    });
+                },
+
+                onApprove: function (data, actions) {
+                    return paypalCheckoutInstance.tokenizePayment(data)
+                        .then(function (payload) {
+                            // Submit `payload.nonce` to your server.
+                            console.log(payload);
+                        });
+                },
+
+                onCancel: function (data) {
+                    console.log('paypal sdk payment cancelled', JSON.stringify(data, 0, 2));
+                },
+
+                onError: function (err) {
+                    console.error('paypal sdk error', err);
+                }
+            }).render('#paypal-button');
+        }).then(function () {
+        }).catch(function (err) {
+        });
+
+    </script>
+</body>
